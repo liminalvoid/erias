@@ -124,7 +124,7 @@ def main() -> int:
         input_matrix.pop(j)
         labels[i] += labels.pop(j)
 
-    print_matrix(input_matrix, [", ".join(l) for l in labels])
+        print_matrix(input_matrix, [", ".join(l) for l in labels])
 
     return 0
 
