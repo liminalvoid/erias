@@ -51,6 +51,18 @@ def recommend(
     return u, sim, sorted(items, key=lambda p: -p[1])
 
 
+def rated_count(values: list[float | int]) -> int:
+    return sum(1 for v in values if v != 0)
+
+
+def most_popular(matrix: Matrix) -> int:
+    # популярность — число оценок, при равенстве — средний рейтинг
+    return max(
+        range(len(matrix)),
+        key=lambda i: (rated_count(matrix[i]), mid(matrix[i])),
+    )
+
+
 def print_matrix(
     matrix: Matrix,
     row_labels: list[str] | None = None,
@@ -81,10 +93,11 @@ def main() -> int:
             "столбцы — пользователи) и матрицу сходства пользователей, " \
             "для каждого пользователя находит наиболее похожего и рекомендует " \
             "товары, которые оценил похожий пользователь (USER-BASED). " \
-            "Новому пользователю (все рейтинги == 0) рекомендуется товар " \
-            "с наибольшим средним рейтингом. Пользователи, отсутствующие " \
-            "в матрице сходства, исключаются. Матрица сходства задается " \
-            "элементами над главной диагональю.",
+            "Новому пользователю рекомендуется самый популярный товар " \
+            "(наибольшее число оценок, при равенстве — наибольший средний " \
+            "рейтинг). Пользователи, отсутствующие в матрице сходства, " \
+            "исключаются. Матрица сходства задается элементами над главной " \
+            "диагональю.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent("""\
             пример:
@@ -161,17 +174,25 @@ def main() -> int:
     if m < len(users):
         print("\nИсключить: " + ", ".join(users[m:]))
 
-    averages = [mid(row) for row in input_matrix]
-    best = max(range(len(products)), key=lambda i: averages[i])
+    best = most_popular(input_matrix)
+    popular = (
+        f"{products[best]} (число оценок {rated_count(input_matrix[best])}, "
+        f"средний рейтинг {mid(input_matrix[best]):g})"
+    )
+
+    print("\nПопулярность товаров:")
+    print_matrix(
+        [[rated_count(row), round(mid(row), 2)] for row in input_matrix],
+        products,
+        ["COUNT", "MID"],
+    )
+    print(f"Новый пользователь: рекомендовать {popular}")
 
     for a in range(len(users)):
         print()
 
         if not any(column(input_matrix, a)):
-            print(
-                f"{users[a]} — новый пользователь, рекомендовать "
-                f"{products[best]} (средний рейтинг {averages[best]:g})"
-            )
+            print(f"{users[a]} — новый пользователь, рекомендовать {popular}")
 
             continue
         if a >= m:
